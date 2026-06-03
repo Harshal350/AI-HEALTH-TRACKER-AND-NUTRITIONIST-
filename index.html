@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>BIO-DIGITAL | Precision Health & Nutrition Tracker</title>
+    
+    <!-- CDNs -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;700&amp;family=Sora:wght@600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.0/dist/mobilenet.min.js"></script>
+
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+              "on-surface": "#dae2fd",
+              "outline": "#86948a",
+              "surface-container-low": "#131b2e",
+              "on-secondary-fixed": "#121f00",
+              "secondary-container": "#83c300",
+              "secondary-fixed": "#b2f746",
+              "background": "#0b1326",
+              "tertiary": "#95d3ba",
+              "on-tertiary-fixed-variant": "#0b513d",
+              "surface-container-highest": "#2d3449",
+              "tertiary-fixed": "#b0f0d6",
+              "surface-container-high": "#222a3d",
+              "on-secondary": "#213600",
+              "on-error": "#690005",
+              "surface-dim": "#0b1326",
+              "on-background": "#dae2fd",
+              "primary-fixed-dim": "#4edea3",
+              "on-error-container": "#ffdad6",
+              "on-primary-fixed": "#002113",
+              "inverse-surface": "#dae2fd",
+              "surface-container-lowest": "#060e20",
+              "secondary-fixed-dim": "#98da27",
+              "on-primary-fixed-variant": "#005236",
+              "outline-variant": "#3c4a42",
+              "on-primary": "#003824",
+              "tertiary-fixed-dim": "#95d3ba",
+              "on-secondary-fixed-variant": "#334f00",
+              "on-primary-container": "#00422b",
+              "on-surface-variant": "#bbcabf",
+              "on-tertiary-fixed": "#002117",
+              "on-secondary-container": "#304b00",
+              "inverse-primary": "#006c49",
+              "on-tertiary": "#003829",
+              "surface-variant": "#2d3449",
+              "surface-tint": "#4edea3",
+              "error": "#ffb4ab",
+              "primary": "#4edea3",
+              "surface-container": "#171f33",
+              "surface-bright": "#31394d",
+              "surface": "#0b1326",
+              "primary-container": "#10b981",
+              "inverse-on-surface": "#283044",
+              "on-tertiary-container": "#004231",
+              "error-container": "#93000a",
+              "tertiary-container": "#71af97",
+              "primary-fixed": "#6ffbbe",
+              "secondary": "#9ddf2e"
+            },
+            "borderRadius": {
+              "DEFAULT": "0.5rem",
+              "lg": "0.75rem",
+              "xl": "1rem",
+              "2xl": "1.5rem",
+              "3xl": "2rem",
+              "full": "9999px"
+            },
+            "spacing": {
+              "unit": "8px",
+              "gutter": "24px",
+              "margin-desktop": "64px",
+              "margin-mobile": "20px",
+              "max-width": "1280px"
+            },
+            "fontFamily": {
+              "body-md": ["Be Vietnam Pro", "sans-serif"],
+              "label-sm": ["JetBrains Mono", "monospace"],
+              "headline-lg": ["Sora", "sans-serif"],
+              "display-lg": ["Sora", "sans-serif"]
+            },
+          },
+        },
+      }
+    </script>
+    
+    <!-- Link to Modular custom styling sheet -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="chlorophyll-bg text-on-surface font-body-md min-h-screen selection:bg-primary/30 flex flex-col">
+
+    <!-- TopNavBar -->
+    <nav class="w-full top-0 sticky z-50 glass-nav border-b border-primary/20 shadow-sm">
+        <div class="flex justify-between items-center h-20 px-margin-mobile md:px-margin-desktop max-w-max-width mx-auto">
+            <div class="font-display-lg text-primary tracking-tighter uppercase font-bold flex items-center gap-2 cursor-pointer" onclick="scrollToApp('dashboard')">
+                <span class="material-symbols-outlined text-3xl text-secondary animate-pulse">biotech</span>
+                BIO-DIGITAL
+            </div>
+            
+            <!-- Navbar tabs -->
+            <div class="hidden md:flex items-center space-x-6 lg:space-x-8">
+                <button id="nav-btn-dashboard" class="nav-btn font-body-md text-body-md text-primary font-bold border-b-2 border-primary pb-1 transition-all" onclick="switchTab('dashboard')">Dashboard</button>
+                <button id="nav-btn-search" class="nav-btn font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors pb-1" onclick="switchTab('search')">Nutrition Search</button>
+                <button id="nav-btn-builder" class="nav-btn font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors pb-1" onclick="switchTab('builder')">Meal Builder</button>
+                <button id="nav-btn-compare" class="nav-btn font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors pb-1" onclick="switchTab('compare')">Compare</button>
+                <button id="nav-btn-image" class="nav-btn font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors pb-1" onclick="switchTab('image')">Bio-Scan</button>
+                <button id="nav-btn-ai" class="nav-btn font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors pb-1" onclick="switchTab('ai')">AI Chat</button>
+            </div>
+            
+            <div class="flex items-center space-x-4 lg:space-x-6">
+                <!-- Notifications icon -->
+                <div class="relative cursor-pointer group">
+                    <span class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">notifications</span>
+                    <span class="absolute top-0 right-0 w-2 h-2 rounded-full bg-secondary"></span>
+                </div>
+                
+                <!-- Profile Avatar -->
+                <div class="w-10 h-10 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center text-primary font-bold overflow-hidden">
+                    <img alt="Profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAA7KeLM_7ZopWIWPtHiJOQpVQ83WwJPkP4xITPLKG9Q-SK-tH9x8pVDeM-LigQPcabTzqkAMpYR2kUo5HITwQOTTbyG2rQO73DkiFd_67adD0v1ae8ooVCBZEwXDsOXr-5F9_Dy-TWZddb_Yemoif4LYLuRhyxOO1e708p4LkpS1SkCX_hiYtU9mqCoA23MfPEpD-QhqiK53cBxu3rxvUscfBBrR3ucJTKykokil8Nmqqc2LHqZDgzegLiA1IvF96KLZHZgY_v6QM"/>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Scroll-Linked Hero Animation Section -->
+    <section id="hero-scroll-container" class="relative w-full h-[500vh] bg-background">
+        <div class="sticky top-20 w-full h-[calc(100vh-5rem)] flex flex-col lg:flex-row items-center justify-between px-margin-mobile md:px-margin-desktop py-8 overflow-hidden max-w-max-width mx-auto">
+            
+            <!-- Left Column: Content sliding based on scroll -->
+            <div class="w-full lg:w-1/2 flex flex-col justify-center h-full z-10 select-none pb-8 lg:pb-0">
+                <div class="relative h-[250px] lg:h-[350px] flex items-center">
+                    <!-- Slide 1 -->
+                    <div id="hero-slide-1" class="hero-slide active opacity-100 transition-all duration-700 absolute inset-0 flex flex-col justify-center">
+                        <div class="text-secondary font-label-sm text-label-sm uppercase tracking-widest mb-2 flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-secondary animate-pulse"></span>
+                            01 / Molecular Analysis
+                        </div>
+                        <h1 class="font-headline-lg text-4xl lg:text-5xl text-on-surface mb-4 leading-tight font-bold">
+                            Precision <span class="text-primary">Bio-Item</span> Scanning
+                        </h1>
+                        <p class="text-on-surface-variant text-body-md max-w-xl">
+                            Deploy high-resolution molecular analysis on individual bio-organic components to optimize your performance threshold. Scroll down to start synthesizing.
+                        </p>
+                    </div>
+                    
+                    <!-- Slide 2 -->
+                    <div id="hero-slide-2" class="hero-slide opacity-0 hidden transition-all duration-700 absolute inset-0 flex flex-col justify-center">
+                        <div class="text-primary font-label-sm text-label-sm uppercase tracking-widest mb-2 flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-primary animate-pulse"></span>
+                            02 / Nutrient Synthesis
+                        </div>
+                        <h1 class="font-headline-lg text-4xl lg:text-5xl text-on-surface mb-4 leading-tight font-bold">
+                            Real-Time <span class="text-secondary">Dietary</span> Modeling
+                        </h1>
+                        <p class="text-on-surface-variant text-body-md max-w-xl">
+                            Consolidate diverse biochemical profiles into an active meal builder. Predict systemic cellular feedback and rate digestion profiles instantly.
+                        </p>
+                    </div>
+                    
+                    <!-- Slide 3 -->
+                    <div id="hero-slide-3" class="hero-slide opacity-0 hidden transition-all duration-700 absolute inset-0 flex flex-col justify-center">
+                        <div class="text-tertiary font-label-sm text-label-sm uppercase tracking-widest mb-2 flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-tertiary animate-pulse"></span>
+                            03 / Health Insights
+                        </div>
+                        <h1 class="font-headline-lg text-4xl lg:text-5xl text-on-surface mb-4 leading-tight font-bold">
+                            AI-Powered <span class="text-tertiary">Mitochondrial</span> Guidance
+                        </h1>
+                        <p class="text-on-surface-variant text-body-md max-w-xl">
+                            Receive machine-learning ratings and interact with a bio-digital laboratory advisor to optimize nutrient diversity and cellular recovery.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Scroll Progress indicators -->
+                <div class="mt-8 flex items-center gap-6">
+                    <div class="flex flex-col">
+                        <span class="text-[10px] text-outline font-label-sm uppercase tracking-widest">Molecular Scan Progress</span>
+                        <div class="w-48 h-1 bg-surface-container-highest rounded-full mt-2 overflow-hidden">
+                            <div id="scroll-progress-bar" class="h-full w-0 bg-primary transition-all duration-100"></div>
+                        </div>
+                    </div>
+                    <button onclick="scrollToApp('dashboard')" class="text-xs text-secondary font-label-sm hover:text-primary flex items-center gap-1 transition-all hover:translate-x-1">
+                        JUMP TO LAB <span class="material-symbols-outlined text-xs">arrow_downward</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right Column: Canvas displaying the 3D rotating scan frames -->
+            <div class="w-full lg:w-1/2 h-[45vh] lg:h-full flex items-center justify-center relative">
+                <div class="absolute -inset-4 bg-primary/5 rounded-[2rem] blur-3xl"></div>
+                <div class="relative w-full max-w-[420px] lg:max-w-[480px] aspect-square rounded-3xl border border-primary/20 bg-surface-container/30 backdrop-blur-sm overflow-hidden flex items-center justify-center shadow-2xl">
+                    
+                    <!-- Canvas for rendering frames -->
+                    <canvas id="scroll-canvas" class="w-full h-full object-contain pointer-events-none"></canvas>
+                    
+                    <!-- Preloading spinner overlay -->
+                    <div id="canvas-loading" class="absolute inset-0 bg-background/90 flex flex-col items-center justify-center gap-4 transition-opacity duration-500 z-30">
+                        <div class="w-12 h-12 rounded-full border-4 border-primary/20 border-t-primary animate-spin"></div>
+                        <div class="text-label-sm text-primary uppercase tracking-widest text-xs font-semibold">Preloading Biospheres...</div>
+                        <div id="preloading-percentage" class="text-xs text-outline font-label-sm">0%</div>
+                    </div>
+
+                    <!-- Canvas status pill -->
+                    <div class="absolute top-4 right-4 bg-surface/80 backdrop-blur px-3 py-1 rounded-full border border-primary/30 flex items-center gap-2 z-20">
+                        <span id="canvas-status-indicator" class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+                        <span id="canvas-status" class="text-label-sm text-xs text-primary uppercase font-bold tracking-widest">SCANNING SYSTEM: IDLE</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Workspace Section -->
+    <main id="app-workspace" class="max-w-max-width mx-auto px-margin-mobile md:px-margin-desktop py-12 w-full flex-grow">
+        
+        <!-- Tab Navigation Bar -->
+        <div class="flex justify-center border-b border-outline-variant/30 mb-8 sticky top-20 glass-nav z-40 rounded-xl px-2 glow-border">
+            <div class="flex space-x-1 md:space-x-4 py-2 overflow-x-auto w-full justify-between sm:justify-center no-scrollbar">
+                <button id="tab-dashboard" class="tab-btn active px-4 py-2.5 rounded-lg text-label-sm uppercase tracking-wider text-primary border-b-2 border-primary font-bold flex items-center gap-2 transition-all" onclick="switchTab('dashboard')">
+                    <span class="material-symbols-outlined text-lg">monitoring</span>Dashboard
+                </button>
+                <button id="tab-search" class="tab-btn px-4 py-2.5 rounded-lg text-label-sm uppercase tracking-wider text-on-surface-variant hover:text-primary font-semibold flex items-center gap-2 transition-all" onclick="switchTab('search')">
+                    <span class="material-symbols-outlined text-lg">search</span>Search
+                </button>
+                <button id="tab-builder" class="tab-btn px-4 py-2.5 rounded-lg text-label-sm uppercase tracking-wider text-on-surface-variant hover:text-primary font-semibold flex items-center gap-2 transition-all" onclick="switchTab('builder')">
+                    <span class="material-symbols-outlined text-lg">nutrition</span>Meal Builder
+                </button>
+                <button id="tab-compare" class="tab-btn px-4 py-2.5 rounded-lg text-label-sm uppercase tracking-wider text-on-surface-variant hover:text-primary font-semibold flex items-center gap-2 transition-all" onclick="switchTab('compare')">
+                    <span class="material-symbols-outlined text-lg">compare_arrows</span>Compare
+                </button>
+                <button id="tab-image" class="tab-btn px-4 py-2.5 rounded-lg text-label-sm uppercase tracking-wider text-on-surface-variant hover:text-primary font-semibold flex items-center gap-2 transition-all" onclick="switchTab('image')">
+                    <span class="material-symbols-outlined text-lg">photo_camera</span>Bio-Scan
+                </button>
+                <button id="tab-ai" class="tab-btn px-4 py-2.5 rounded-lg text-label-sm uppercase tracking-wider text-on-surface-variant hover:text-primary font-semibold flex items-center gap-2 transition-all" onclick="switchTab('ai')">
+                    <span class="material-symbols-outlined text-lg">smart_toy</span>AI Lab
+                </button>
+            </div>
+        </div>
+
+        <!-- TAB CONTENT AREAS -->
+
+        <!-- 1. DASHBOARD VIEW -->
+        <div id="view-dashboard" class="tab-view space-y-8">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <!-- Main Energy Summary (Liquid Gauge) -->
+                <div class="lg:col-span-1 glass-panel rounded-3xl p-6 flex flex-col items-center justify-between text-center glow-border relative">
+                    <div class="absolute top-4 right-4">
+                        <span class="text-label-sm text-outline uppercase font-semibold text-[10px]">DAILY FUEL RATIO</span>
+                    </div>
+                    <div class="w-full text-left mb-4">
+                        <h3 class="font-headline-lg text-lg text-on-surface font-semibold">Today's Bio-Load</h3>
+                        <p class="text-xs text-outline">Accumulated metabolic capacity</p>
+                    </div>
+                    
+                    <div class="relative flex items-center justify-center my-6">
+                        <!-- Chlorophyll Tube Ring Gauge -->
+                        <svg class="w-48 h-48 transform -rotate-90">
+                            <defs>
+                                <linearGradient id="liquid-green-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stop-color="#10b981" />
+                                    <stop offset="100%" stop-color="#9ddf2e" />
+                                </linearGradient>
+                            </defs>
+                            <circle cx="96" cy="96" r="80" stroke="rgba(16, 185, 129, 0.08)" stroke-width="12" fill="transparent" />
+                            <circle id="dash-cal-ring" cx="96" cy="96" r="80" stroke="url(#liquid-green-grad)" stroke-width="12" fill="transparent" stroke-dasharray="502.65" stroke-dashoffset="502.65" stroke-linecap="round" style="transition: stroke-dashoffset 1.5s ease-in-out;" />
+                        </svg>
+                        <div class="absolute flex flex-col items-center justify-center">
+                            <span id="dash-cal-number" class="text-4xl font-display-lg text-primary font-bold leading-none">0</span>
+                            <span class="text-[10px] text-outline font-label-sm uppercase mt-1">kcal consumed</span>
+                            <span id="dash-cal-percent" class="text-xs text-secondary font-label-sm mt-0.5">0% of max</span>
+                        </div>
+                    </div>
+                    
+                    <div class="w-full bg-surface-container-low/40 border border-outline-variant/20 rounded-xl p-3 text-center">
+                        <span class="text-xs text-on-surface-variant font-medium">Daily Limit Target: <strong class="text-primary font-semibold">2,000 kcal</strong></span>
+                    </div>
+                </div>
+
+                <!-- Live Macro Accumulation -->
+                <div class="lg:col-span-2 glass-panel rounded-3xl p-6 flex flex-col justify-between glow-border relative">
+                    <div class="flex justify-between items-start mb-6">
+                        <div>
+                            <h3 class="font-headline-lg text-lg text-on-surface font-semibold">Synthesized Macromolecules</h3>
+                            <p class="text-xs text-outline">Macro distribution and threshold limits</p>
+                        </div>
+                        <div class="text-right">
+                            <div class="px-2 py-1 bg-primary/10 border border-primary/20 rounded text-[10px] text-primary font-label-sm uppercase font-bold">SYNTHESIS ONLINE</div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-6">
+                        <!-- Lipids -->
+                        <div class="space-y-2">
+                            <div class="flex justify-between text-xs font-label-sm uppercase">
+                                <span class="text-on-surface-variant flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-secondary"></span>Lipids (Fats)</span>
+                                <span class="text-secondary" id="dash-fat-text">0g / 70g (0%)</span>
+                            </div>
+                            <div class="h-4 bg-surface-container-highest/40 rounded-full overflow-hidden p-0.5 border border-outline-variant/10">
+                                <div id="dash-fat-bar" class="liquid-fill h-full rounded-full w-0" style="background: linear-gradient(90deg, #83c300, #b2f746);"></div>
+                            </div>
+                        </div>
+
+                        <!-- Carbs -->
+                        <div class="space-y-2">
+                            <div class="flex justify-between text-xs font-label-sm uppercase">
+                                <span class="text-on-surface-variant flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-tertiary"></span>Carbohydrates</span>
+                                <span class="text-tertiary" id="dash-carb-text">0g / 200g (0%)</span>
+                            </div>
+                            <div class="h-4 bg-surface-container-highest/40 rounded-full overflow-hidden p-0.5 border border-outline-variant/10">
+                                <div id="dash-carb-bar" class="liquid-fill h-full rounded-full w-0" style="background: linear-gradient(90deg, #71af97, #b0f0d6);"></div>
+                            </div>
+                        </div>
+
+                        <!-- Proteins -->
+                        <div class="space-y-2">
+                            <div class="flex justify-between text-xs font-label-sm uppercase">
+                                <span class="text-on-surface-variant flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-primary"></span>Proteins (Amino Acids)</span>
+                                <span class="text-primary" id="dash-protein-text">0g / 100g (0%)</span>
+                            </div>
+                            <div class="h-4 bg-surface-container-highest/40 rounded-full overflow-hidden p-0.5 border border-outline-variant/10">
+                                <div id="dash-protein-bar" class="liquid-fill h-full rounded-full w-0" style="background: linear-gradient(90deg, #10b981, #4edea3);"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-outline-variant/15 text-center">
+                        <div>
+                            <div id="dash-stat-fiber" class="text-lg font-display-lg font-bold text-primary">0g</div>
+                            <div class="text-[9px] text-outline font-label-sm uppercase">Dietary Fiber</div>
+                        </div>
+                        <div>
+                            <div id="dash-stat-sodium" class="text-lg font-display-lg font-bold text-error">0mg</div>
+                            <div class="text-[9px] text-outline font-label-sm uppercase">Sodium</div>
+                        </div>
+                        <div>
+                            <div id="dash-stat-potassium" class="text-lg font-display-lg font-bold text-secondary">0mg</div>
+                            <div class="text-[9px] text-outline font-label-sm uppercase">Potassium</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bio-Metric Indexes Bento Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- 1. Mitochondrial Energy Index -->
+                <div class="glass-panel rounded-3xl p-6 flex flex-col justify-between glow-border relative bg-primary/5">
+                    <div>
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="material-symbols-outlined text-secondary text-3xl">bolt</span>
+                            <span class="text-[10px] text-secondary font-label-sm uppercase tracking-widest font-bold">Mitochondrial Index</span>
+                        </div>
+                        <h4 class="text-headline-lg font-bold text-on-surface text-base">Energy Capacity (MEI)</h4>
+                        <p class="text-xs text-on-surface-variant mt-2 leading-relaxed">Synthesized from B-vitamins, Vitamin C, and Magnesium load, reflecting ATP production capability.</p>
+                    </div>
+                    <div class="mt-6">
+                        <div class="flex items-baseline gap-1">
+                            <span id="dash-mei-value" class="text-4xl font-display-lg text-secondary font-bold">0%</span>
+                            <span class="text-xs text-outline font-label-sm uppercase">efficiency</span>
+                        </div>
+                        <div class="h-2 bg-surface-container-highest/50 rounded-full mt-2 overflow-hidden">
+                            <div id="dash-mei-bar" class="h-full bg-secondary w-0 transition-all duration-1000"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Electrolyte Balance Indicator -->
+                <div class="glass-panel rounded-3xl p-6 flex flex-col justify-between glow-border relative bg-secondary/5">
+                    <div>
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="material-symbols-outlined text-primary text-3xl">ecg_heart</span>
+                            <span class="text-[10px] text-primary font-label-sm uppercase tracking-widest font-bold">Electrolyte Ratio</span>
+                        </div>
+                        <h4 class="text-headline-lg font-bold text-on-surface text-base">Hydration & Sodium Index</h4>
+                        <p class="text-xs text-on-surface-variant mt-2 leading-relaxed">Monitors the ratio of intracellular Potassium to extracellular Sodium. Essential for neural conduction.</p>
+                    </div>
+                    <div class="mt-6">
+                        <div class="flex justify-between items-center mb-1.5">
+                            <span id="dash-electrolyte-status" class="text-xs text-primary font-semibold font-label-sm uppercase">OPTIMAL</span>
+                            <span id="dash-electrolyte-ratio" class="text-[10px] text-outline font-label-sm">K:Na 0.0</span>
+                        </div>
+                        <div class="h-2 bg-surface-container-highest/50 rounded-full overflow-hidden relative">
+                            <!-- Electrolyte pointer needle -->
+                            <div id="dash-electrolyte-needle" class="absolute top-0 bottom-0 w-1 bg-primary shadow-lg transition-all duration-1000" style="left: 50%;"></div>
+                            <!-- Zones -->
+                            <div class="w-full h-full flex">
+                                <div class="w-1/3 h-full bg-error/20" title="Low Potassium"></div>
+                                <div class="w-1/3 h-full bg-primary/20" title="Optimal Ratio"></div>
+                                <div class="w-1/3 h-full bg-error/20" title="High Sodium"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Bone Matrix Integrity -->
+                <div class="glass-panel rounded-3xl p-6 flex flex-col justify-between glow-border relative bg-tertiary/5">
+                    <div>
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="material-symbols-outlined text-tertiary text-3xl">shield_with_heart</span>
+                            <span class="text-[10px] text-tertiary font-label-sm uppercase tracking-widest font-bold">Vascular & Bone</span>
+                        </div>
+                        <h4 class="text-headline-lg font-bold text-on-surface text-base">Bone Matrix Density</h4>
+                        <p class="text-xs text-on-surface-variant mt-2 leading-relaxed">Calculated from systemic Vitamin K and Calcium assimilation, influencing vascular safety and bone density.</p>
+                    </div>
+                    <div class="mt-6">
+                        <div class="flex items-baseline gap-1">
+                            <span id="dash-bone-value" class="text-4xl font-display-lg text-tertiary font-bold">0%</span>
+                            <span class="text-xs text-outline font-label-sm uppercase">synthesized</span>
+                        </div>
+                        <div class="h-2 bg-surface-container-highest/50 rounded-full mt-2 overflow-hidden">
+                            <div id="dash-bone-bar" class="h-full bg-tertiary w-0 transition-all duration-1000"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive Logging History & Chart -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Log Table -->
+                <div class="lg:col-span-2 glass-panel rounded-3xl p-6 glow-border flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-headline-lg text-base font-bold text-on-surface">Specimen Scan History</h3>
+                            <button onclick="clearMealHistory()" class="text-xs text-error font-label-sm uppercase hover:underline">Flush History</button>
+                        </div>
+                        
+                        <div class="overflow-x-auto w-full">
+                            <table class="w-full text-left text-xs font-label-sm">
+                                <thead>
+                                    <tr class="border-b border-outline-variant/20 text-outline uppercase tracking-wider">
+                                        <th class="py-2.5">Specimen Name</th>
+                                        <th class="py-2.5">Category</th>
+                                        <th class="py-2.5 text-right">Mass (g)</th>
+                                        <th class="py-2.5 text-right">Energy (kcal)</th>
+                                        <th class="py-2.5 text-right">Amino Acids (g)</th>
+                                        <th class="py-2.5 text-center">Timestamp</th>
+                                        <th class="py-2.5"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dash-history-body" class="divide-y divide-outline-variant/10 text-on-surface-variant">
+                                    <!-- Rendered dynamically -->
+                                </tbody>
+                            </table>
+                            <div id="dash-history-empty" class="hidden text-center py-8 text-outline text-xs">
+                                No bio-data cataloged in active log. Switch to Meal Builder to register.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 pt-4 border-t border-outline-variant/20 flex flex-col sm:flex-row justify-between items-center gap-4">
+                        <span class="text-xs text-outline">Logged Bio-mass is stored locally for active session diagnostics.</span>
+                        <button onclick="switchTab('builder')" class="bg-gradient-to-r from-primary-container to-secondary text-surface text-xs font-bold px-4 py-2 rounded-lg flex items-center gap-2 hover:scale-105 transition-all">
+                            <span class="material-symbols-outlined text-sm">add_circle</span> Add Specimen Log
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Daily Macro Balance Chart (Chart.js) -->
+                <div class="lg:col-span-1 glass-panel rounded-3xl p-6 glow-border flex flex-col justify-between">
+                    <div>
+                        <h3 class="font-headline-lg text-base font-bold text-on-surface mb-2">Molecular Balance</h3>
+                        <p class="text-xs text-outline mb-4">Macronutrient calibration ratio</p>
+                    </div>
+                    <div class="h-48 relative flex items-center justify-center">
+                        <canvas id="macro-doughnut-chart" class="max-w-[180px] max-h-[180px]"></canvas>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-outline-variant/20 text-center">
+                        <div class="text-xs text-on-surface-variant font-medium" id="dash-chart-advice">
+                            Loading diagnostic analysis...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. NUTRITION SEARCH VIEW -->
+        <div id="view-search" class="tab-view space-y-8 hidden">
+            <!-- Search bar header -->
+            <div class="glass-panel rounded-3xl p-6 glow-border bg-gradient-to-r from-surface-container/20 to-primary/5">
+                <h2 class="font-headline-lg text-2xl text-on-surface mb-2 font-bold">Precision Molecular Library</h2>
+                <p class="text-on-surface-variant text-body-md mb-6 max-w-2xl">Query our biological database to study the molecular breakdowns, vitamin distributions, and cellular ratings of organic components.</p>
+                
+                <div class="flex flex-col sm:flex-row gap-4 relative">
+                    <div class="relative flex-grow">
+                        <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-primary">biotech</span>
+                        <input id="search-input" class="w-full glass-panel rounded-xl pl-12 pr-4 py-4 text-body-md focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none transition-all placeholder:text-on-surface-variant/40" placeholder="Query specimen name (e.g., Avocado, Wild Salmon, Kale)..." type="text" oninput="handleSearchAutocomplete()"/>
+                        
+                        <!-- Autocomplete Suggestions -->
+                        <div id="search-suggestions" class="absolute left-0 right-0 mt-1 bg-surface-container-high border border-primary/20 rounded-xl overflow-hidden shadow-2xl z-50 divide-y divide-outline-variant/10 hidden">
+                            <!-- Dynamic items -->
+                        </div>
+                    </div>
+                    <button onclick="triggerSearchScan()" class="bg-gradient-to-r from-primary-container to-secondary py-4 px-8 rounded-xl text-surface font-bold flex items-center justify-center gap-2 transition-transform hover:scale-105 active:scale-95 shadow-lg shadow-primary/10">
+                        <span id="search-scan-icon" class="material-symbols-outlined">center_focus_weak</span>
+                        <span id="search-scan-text">Scan Bio-Item</span>
+                    </button>
+                </div>
+                
+                <div class="mt-4 flex flex-wrap gap-2.5 items-center">
+                    <span class="text-xs text-outline font-label-sm uppercase tracking-wider mr-2">Quick Reference Specimen:</span>
+                    <button onclick="loadSearchItem('avocado')" class="px-3 py-1.5 glass-panel rounded-full text-xs text-on-surface hover:border-primary hover:text-primary transition-all">Avocado</button>
+                    <button onclick="loadSearchItem('wild_salmon')" class="px-3 py-1.5 glass-panel rounded-full text-xs text-on-surface hover:border-primary hover:text-primary transition-all">Wild Salmon</button>
+                    <button onclick="loadSearchItem('kale')" class="px-3 py-1.5 glass-panel rounded-full text-xs text-on-surface hover:border-primary hover:text-primary transition-all">Kale</button>
+                    <button onclick="loadSearchItem('chia_seeds')" class="px-3 py-1.5 glass-panel rounded-full text-xs text-on-surface hover:border-primary hover:text-primary transition-all">Chia Seeds</button>
+                    <button onclick="loadSearchItem('spinach')" class="px-3 py-1.5 glass-panel rounded-full text-xs text-on-surface hover:border-primary hover:text-primary transition-all">Spinach</button>
+                </div>
+            </div>
+
+            <!-- Search Results Profile (Bento Grid) -->
+            <div id="search-profile" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <!-- Bento elements will be rendered dynamically here -->
+            </div>
+        </div>
+
+        <!-- 3. MEAL BUILDER VIEW -->
+        <div id="view-builder" class="tab-view space-y-8 hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                <!-- Left Column: Add Specimen Form -->
+                <div class="lg:col-span-1 space-y-6">
+                    <div class="glass-panel rounded-3xl p-6 glow-border flex flex-col justify-between">
+                        <div>
+                            <h3 class="font-headline-lg text-lg text-on-surface font-semibold mb-2">Molecular Assimilator</h3>
+                            <p class="text-xs text-outline mb-6">Select a biological component and calibrate its weight load to evaluate systemic impacts.</p>
+                            
+                            <div class="space-y-4">
+                                <!-- Food Selection -->
+                                <div class="space-y-2">
+                                    <label class="text-xs text-outline font-label-sm uppercase">Select Bio-Item</label>
+                                    <select id="builder-food-select" class="w-full glass-panel bg-surface-container-high/50 rounded-xl px-4 py-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none text-on-surface">
+                                        <!-- Populated dynamically -->
+                                    </select>
+                                </div>
+                                
+                                <!-- Weight adjustment (Slider and Number) -->
+                                <div class="space-y-2">
+                                    <div class="flex justify-between items-center text-xs font-label-sm uppercase">
+                                        <span class="text-outline">Specimen Mass</span>
+                                        <span class="text-primary font-bold" id="builder-mass-display">100g</span>
+                                    </div>
+                                    <div class="flex gap-4 items-center">
+                                        <input type="range" id="builder-mass-range" min="10" max="500" value="100" class="flex-grow accent-primary bg-surface-container-highest rounded-lg h-2" oninput="updateBuilderMassSlider(this.value)">
+                                        <input type="number" id="builder-mass-number" min="10" max="500" value="100" class="w-20 glass-panel bg-surface-container-high/50 rounded-xl text-center py-2 text-sm text-on-surface outline-none" oninput="updateBuilderMassNumber(this.value)">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-8">
+                            <button onclick="addFoodToMeal()" class="w-full bg-gradient-to-r from-primary-container to-secondary text-surface py-3 px-6 rounded-xl font-bold flex items-center justify-center gap-2 hover:scale-102 transition-transform shadow-lg shadow-primary/10">
+                                <span class="material-symbols-outlined">add_circle</span> Inject to Recipe
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Library Food Quick List -->
+                    <div class="glass-panel rounded-3xl p-6 glow-border">
+                        <h4 class="text-xs text-outline font-label-sm uppercase mb-4 tracking-wider">Organic Library Inventory</h4>
+                        <div class="max-h-[300px] overflow-y-auto divide-y divide-outline-variant/15 pr-2" id="builder-inventory-list">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Active Recipe & ML Health Rating -->
+                <div class="lg:col-span-2 space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Meal Log Table -->
+                        <div class="md:col-span-2 glass-panel rounded-3xl p-6 glow-border flex flex-col justify-between">
+                            <div>
+                                <div class="flex justify-between items-center mb-4">
+                                    <h3 class="font-headline-lg text-base font-bold text-on-surface">Active Composite Recipe</h3>
+                                    <button onclick="clearBuilderMeal()" class="text-xs text-error font-label-sm uppercase hover:underline">Flush Recipe</button>
+                                </div>
+                                <div class="overflow-x-auto w-full">
+                                    <table class="w-full text-left text-xs font-label-sm">
+                                        <thead>
+                                            <tr class="border-b border-outline-variant/20 text-outline uppercase tracking-wider">
+                                                <th class="py-2">Item Name</th>
+                                                <th class="py-2 text-right">Mass (g)</th>
+                                                <th class="py-2 text-right">Energy (kcal)</th>
+                                                <th class="py-2 text-right">Protein (g)</th>
+                                                <th class="py-2 text-right">Carbs (g)</th>
+                                                <th class="py-2 text-right">Fat (g)</th>
+                                                <th class="py-2"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="builder-log-body" class="divide-y divide-outline-variant/10 text-on-surface-variant">
+                                            <!-- Dynamically generated rows -->
+                                        </tbody>
+                                    </table>
+                                    <div id="builder-log-empty" class="text-center py-10 text-outline text-xs hidden">
+                                        No biological elements added. Use the left panel to load ingredients.
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-6 pt-4 border-t border-outline-variant/20 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+                                <div>
+                                    <div id="builder-total-cals" class="text-base font-display-lg font-bold text-primary">0 kcal</div>
+                                    <div class="text-[9px] text-outline font-label-sm uppercase">Total Energy</div>
+                                </div>
+                                <div>
+                                    <div id="builder-total-protein" class="text-base font-display-lg font-bold text-secondary">0g</div>
+                                    <div class="text-[9px] text-outline font-label-sm uppercase">Total Protein</div>
+                                </div>
+                                <div>
+                                    <div id="builder-total-carbs" class="text-base font-display-lg font-bold text-tertiary">0g</div>
+                                    <div class="text-[9px] text-outline font-label-sm uppercase">Total Carbs</div>
+                                </div>
+                                <div>
+                                    <div id="builder-total-fat" class="text-base font-display-lg font-bold text-on-surface">0g</div>
+                                    <div class="text-[9px] text-outline font-label-sm uppercase">Total Fat</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ML Health Score Widget -->
+                        <div class="md:col-span-1 glass-panel rounded-3xl p-6 glow-border flex flex-col justify-between items-center text-center relative bg-primary/5">
+                            <div class="absolute top-4 right-4">
+                                <span class="material-symbols-outlined text-primary text-2xl">science</span>
+                            </div>
+                            <div class="w-full text-left">
+                                <h4 class="text-xs text-outline font-label-sm uppercase">Predictive Heuristic</h4>
+                                <span class="text-xs text-primary font-bold font-label-sm uppercase">Health Rating</span>
+                            </div>
+                            
+                            <div class="relative flex items-center justify-center my-6">
+                                <svg class="w-36 h-36 transform -rotate-90">
+                                    <circle cx="72" cy="72" r="60" stroke="rgba(78, 222, 163, 0.08)" stroke-width="8" fill="transparent" />
+                                    <circle id="builder-health-ring" cx="72" cy="72" r="60" stroke="url(#liquid-green-grad)" stroke-width="8" fill="transparent" stroke-dasharray="376.99" stroke-dashoffset="376.99" stroke-linecap="round" style="transition: stroke-dashoffset 1s ease-in-out;" />
+                                </svg>
+                                <div class="absolute flex flex-col items-center justify-center">
+                                    <span id="builder-health-grade" class="text-4xl font-display-lg text-primary font-bold">N/A</span>
+                                    <span id="builder-health-score" class="text-[9px] text-outline font-label-sm uppercase mt-0.5">Score: 0</span>
+                                </div>
+                            </div>
+
+                            <button onclick="commitBuilderMealToLog()" id="builder-save-btn" class="w-full bg-secondary text-surface text-xs font-bold py-2.5 rounded-lg hover:scale-103 transition-all flex items-center justify-center gap-1 shadow-lg shadow-secondary/15">
+                                <span class="material-symbols-outlined text-sm">save</span> Catalog Recipe to Log
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- AI Diagnostic Recommendations -->
+                    <div class="glass-panel rounded-3xl p-6 glow-border">
+                        <div class="flex items-center gap-2 mb-4">
+                            <span class="material-symbols-outlined text-primary text-2xl">healing</span>
+                            <h3 class="font-headline-lg text-base font-bold">Clinical Nutrition Diagnostic Report</h3>
+                        </div>
+                        <div class="space-y-4" id="builder-diagnostic-panel">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. FOOD COMPARISON VIEW -->
+        <div id="view-compare" class="tab-view space-y-8 hidden">
+            <div class="glass-panel rounded-3xl p-6 glow-border">
+                <h2 class="font-headline-lg text-2xl text-on-surface mb-2 font-bold">Digital Specimen Comparison</h2>
+                <p class="text-on-surface-variant text-body-md mb-6 max-w-2xl">Select two biological elements from the library database to evaluate their nutritional variance side-by-side.</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Dropdown A -->
+                    <div class="space-y-2">
+                        <label class="text-xs text-outline font-label-sm uppercase flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-primary"></span>Specimen A</label>
+                        <select id="compare-select-a" class="w-full glass-panel bg-surface-container-high/50 rounded-xl px-4 py-3.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none text-on-surface" onchange="runComparison()">
+                            <!-- Dynamic -->
+                        </select>
+                    </div>
+                    <!-- Dropdown B -->
+                    <div class="space-y-2">
+                        <label class="text-xs text-outline font-label-sm uppercase flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-secondary"></span>Specimen B</label>
+                        <select id="compare-select-b" class="w-full glass-panel bg-surface-container-high/50 rounded-xl px-4 py-3.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none text-on-surface" onchange="runComparison()">
+                            <!-- Dynamic -->
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Comparison Dashboard -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Comparative Analysis Grid -->
+                <div class="lg:col-span-2 glass-panel rounded-3xl p-6 glow-border flex flex-col justify-between">
+                    <div>
+                        <h3 class="font-headline-lg text-base font-bold text-on-surface mb-4">Nutrient Ratios & Differences</h3>
+                        
+                        <div class="space-y-4" id="compare-bars-container">
+                            <!-- Dynamic Bars comparison using CSS -->
+                        </div>
+                    </div>
+                    <div class="mt-6 pt-4 border-t border-outline-variant/15 text-xs text-outline flex justify-between items-center">
+                        <span>All values computed per 100g unit mass.</span>
+                        <div class="flex items-center gap-3">
+                            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-primary"></span>Specimen A</span>
+                            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-secondary"></span>Specimen B</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Side-by-Side Detailed Breakdown -->
+                <div class="lg:col-span-1 glass-panel rounded-3xl p-6 glow-border flex flex-col justify-between">
+                    <div>
+                        <h3 class="font-headline-lg text-base font-bold text-on-surface mb-4">Diagnostic Lab Summary</h3>
+                        
+                        <div class="space-y-4" id="compare-details-panel">
+                            <!-- Dynamic details -->
+                        </div>
+                    </div>
+                    <div class="mt-6 pt-4 border-t border-outline-variant/15 text-center">
+                        <div id="compare-ai-verdict" class="text-xs text-primary font-medium bg-primary/5 rounded-xl p-3 border border-primary/25 leading-relaxed">
+                            Loading diagnostic comparison...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. BIO-SCAN VIEW (IMAGE UPLOAD) -->
+        <div id="view-image" class="tab-view space-y-8 hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                <!-- Left: Dropzone and scanner view -->
+                <div class="lg:col-span-1 space-y-6">
+                    <div class="glass-panel rounded-3xl p-6 glow-border flex flex-col items-center justify-between text-center relative overflow-hidden">
+                        
+                        <div class="w-full text-left mb-4">
+                            <h3 class="font-headline-lg text-lg text-on-surface font-semibold">Image Classifier</h3>
+                            <p class="text-xs text-outline">Upload image specimens for neural recognition</p>
+                        </div>
+                        
+                        <!-- Drag-and-Drop Area -->
+                        <div id="image-dropzone" class="w-full border-2 border-dashed border-primary/20 hover:border-primary/60 rounded-2xl aspect-square flex flex-col items-center justify-center p-6 cursor-pointer bg-surface-container-low/20 transition-all relative overflow-hidden group">
+                            
+                            <!-- Static Preview inside dropzone if file loaded -->
+                            <img id="image-scan-preview" class="absolute inset-0 w-full h-full object-cover hidden z-10" alt="Scanned item">
+                            
+                            <!-- Neon Scanner laser animation line -->
+                            <div id="scanner-laser" class="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-secondary to-transparent shadow-[0_0_8px_#9ddf2e] z-20 hidden scanner-line"></div>
+                            
+                            <div id="dropzone-prompt" class="flex flex-col items-center justify-center gap-3 group-hover:scale-105 transition-transform z-0">
+                                <span class="material-symbols-outlined text-4xl text-primary animate-pulse">cloud_upload</span>
+                                <div class="text-xs text-on-surface font-semibold font-label-sm uppercase">Drop food scan here</div>
+                                <div class="text-[10px] text-outline">or click to open browser storage</div>
+                                <div class="text-[9px] text-secondary font-label-sm bg-secondary/15 px-2 py-0.5 rounded-full border border-secondary/20 mt-1 uppercase">JPG, PNG under 5MB</div>
+                            </div>
+                        </div>
+
+                        <!-- Hidden File input -->
+                        <input type="file" id="image-scan-file" class="hidden" accept="image/*" onchange="processSelectedImage(this)">
+
+                        <div class="w-full mt-6 flex justify-between gap-4">
+                            <button onclick="document.getElementById('image-scan-file').click()" class="flex-grow glass-panel text-on-surface hover:text-primary py-2.5 rounded-lg text-xs font-bold transition-all">
+                                Load Specimen
+                            </button>
+                            <button id="run-image-scan-btn" onclick="startNeuralRecognition()" class="flex-grow bg-gradient-to-r from-primary-container to-secondary text-surface py-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 shadow-lg shadow-primary/10 opacity-50 cursor-not-allowed" disabled>
+                                <span class="material-symbols-outlined text-sm">science</span> Run Recognition
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Neural Network Health State -->
+                    <div class="glass-panel rounded-3xl p-6 glow-border">
+                        <div class="flex items-center gap-2 mb-4">
+                            <span class="material-symbols-outlined text-secondary">memory</span>
+                            <h4 class="text-xs text-outline font-label-sm uppercase tracking-wider">Neural Engine Profile</h4>
+                        </div>
+                        <div class="space-y-3 font-label-sm text-xs">
+                            <div class="flex justify-between">
+                                <span class="text-outline">Engine Architecture:</span>
+                                <span class="text-on-surface font-semibold">MobileNet V1 (1.0)</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-outline">Framework:</span>
+                                <span class="text-on-surface font-semibold">TensorFlow.js CDN</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-outline">Neural Engine State:</span>
+                                <span id="tf-status-text" class="text-secondary font-semibold uppercase">READY / OFFLINE</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Scan Results and Database Match -->
+                <div class="lg:col-span-2 space-y-6">
+                    <!-- Scanner Logs & Output -->
+                    <div class="glass-panel rounded-3xl p-6 glow-border min-h-[250px] flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="font-headline-lg text-base font-bold text-on-surface">Neural Classification Scan Output</h3>
+                                <span id="scan-indicator-pill" class="hidden px-2 py-0.5 bg-secondary/15 border border-secondary/30 rounded text-[10px] text-secondary font-label-sm uppercase font-bold animate-pulse">ANALYZING SPECIMEN</span>
+                            </div>
+                            
+                            <div id="scan-output-content" class="space-y-4">
+                                <div class="text-center py-12 text-outline text-xs">
+                                    No biological specimen loaded for neural processing. Load a food photo on the left.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="scan-actions-panel" class="hidden mt-6 pt-4 border-t border-outline-variant/15 flex flex-wrap justify-end gap-3">
+                            <button id="btn-scan-import" class="glass-panel text-on-surface hover:text-primary text-xs font-bold px-4 py-2.5 rounded-lg flex items-center gap-1 transition-all">
+                                <span class="material-symbols-outlined text-sm">search</span> Import to Search View
+                            </button>
+                            <button id="btn-scan-add-meal" class="bg-secondary text-surface text-xs font-bold px-4 py-2.5 rounded-lg hover:scale-103 transition-all flex items-center gap-1 shadow-lg shadow-secondary/15">
+                                <span class="material-symbols-outlined text-sm">add_circle</span> Inject (100g) into Recipe
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Image Scan Educational note -->
+                    <div class="glass-panel rounded-3xl p-6 glow-border">
+                        <div class="flex items-center gap-2 mb-3">
+                            <span class="material-symbols-outlined text-primary">info</span>
+                            <h4 class="text-sm font-semibold font-headline-lg">About Bio-Scan Image Recognition</h4>
+                        </div>
+                        <p class="text-xs text-on-surface-variant leading-relaxed">
+                            The Bio-Scan module utilizes a convolutional neural network (MobileNet V1) trained on millions of images. The model operates 100% locally inside your web browser using WebGL GPU acceleration via TensorFlow.js. When you load a food specimen photo, the network extracts spatial feature maps and returns the top 3 corresponding ImageNet labels, which are mapped to our organic library for complete chemical breakdowns.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. AI CONSULTATION VIEW -->
+        <div id="view-ai" class="tab-view space-y-8 hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                <!-- Left: Bot Settings and Presets -->
+                <div class="lg:col-span-1 space-y-6">
+                    <!-- Bio-Digital Chat Settings -->
+                    <div class="glass-panel rounded-3xl p-6 glow-border flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="font-headline-lg text-base font-bold text-on-surface flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-secondary">tune</span>
+                                    Node Status
+                                </h3>
+                                <span class="px-2 py-0.5 bg-primary/10 border border-primary/20 rounded text-[9px] text-primary font-label-sm uppercase font-bold">CHLOROPHYLL-v1</span>
+                            </div>
+                            <p class="text-xs text-outline mb-6">Connected to the permanent Gemini API diagnostic node for real-time generative intelligence.</p>
+                            
+                            <div class="space-y-4">
+                                <div class="bg-primary/5 border border-primary/20 rounded-xl p-4 flex items-center gap-3">
+                                    <span class="material-symbols-outlined text-primary animate-pulse text-2xl">sensors</span>
+                                    <div>
+                                        <div class="text-xs text-on-surface font-semibold font-label-sm">LIVE NODE ESTABLISHED</div>
+                                        <div class="text-[9px] text-outline font-label-sm">INTELLIGENCE STAGE: ONLINE</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 pt-6 border-t border-outline-variant/15 text-[10px] text-outline leading-relaxed">
+                            Mitochondrial guidance queries are processed directly through Google's Generative AI servers.
+                        </div>
+                    </div>
+
+                    <!-- Preset diagnostic chips -->
+                    <div class="glass-panel rounded-3xl p-6 glow-border">
+                        <h4 class="text-xs text-outline font-label-sm uppercase mb-4 tracking-wider">Diagnostic Prompt Chips</h4>
+                        <div class="flex flex-col gap-2.5">
+                            <button onclick="injectPromptChip('Suggest a balanced meal blueprint for high-protein and low-carb goals.')" class="w-full text-left p-3 glass-panel rounded-xl text-xs text-on-surface-variant hover:border-primary hover:text-primary transition-all text-ellipsis overflow-hidden whitespace-nowrap">
+                                🎯 Suggest balanced meal blueprints
+                            </button>
+                            <button onclick="injectPromptChip('Explain the difference between potassium and sodium in cell hydration.')" class="w-full text-left p-3 glass-panel rounded-xl text-xs text-on-surface-variant hover:border-primary hover:text-primary transition-all text-ellipsis overflow-hidden whitespace-nowrap">
+                                💧 Potassium vs Sodium hydration
+                            </button>
+                            <button onclick="injectPromptChip('Which foods in the organic library are best for bone integrity and Vitamin K?')" class="w-full text-left p-3 glass-panel rounded-xl text-xs text-on-surface-variant hover:border-primary hover:text-primary transition-all text-ellipsis overflow-hidden whitespace-nowrap">
+                                🦴 Find bone density organic foods
+                            </button>
+                            <button onclick="injectPromptChip('Identify vitamin deficiencies from a diet lack of green leafy vegetables.')" class="w-full text-left p-3 glass-panel rounded-xl text-xs text-on-surface-variant hover:border-primary hover:text-primary transition-all text-ellipsis overflow-hidden whitespace-nowrap">
+                                🧪 Evaluate nutrient deficiencies
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Active Chat View -->
+                <div class="lg:col-span-2 glass-panel rounded-3xl glow-border flex flex-col h-[550px] overflow-hidden">
+                    
+                    <!-- Chat Header -->
+                    <div class="p-4 border-b border-outline-variant/20 bg-surface-container/20 flex justify-between items-center">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-secondary animate-pulse"></span>
+                            <div>
+                                <h3 class="font-headline-lg text-sm font-bold text-on-surface leading-none">CHLOROPHYLL-v1 Chat Node</h3>
+                                <span class="text-[9px] text-outline font-label-sm uppercase">Active Biological Diagnostics</span>
+                            </div>
+                        </div>
+                        <button onclick="resetChatHistory()" class="text-xs text-error font-label-sm uppercase hover:underline">Flush Chat</button>
+                    </div>
+
+                    <!-- Chat Messages list -->
+                    <div id="ai-chat-messages" class="flex-grow p-6 overflow-y-auto space-y-4 font-body-md text-sm">
+                        <!-- Dynamic items -->
+                    </div>
+
+                    <!-- Typing indicator -->
+                    <div id="ai-chat-typing" class="px-6 py-2 text-xs text-primary font-semibold font-label-sm uppercase tracking-wider bg-surface-container-low/10 hidden">
+                        <span class="animate-pulse">Synthesizing biochemical analysis...</span>
+                    </div>
+
+                    <!-- Chat Input form -->
+                    <div class="p-4 border-t border-outline-variant/20 bg-surface-container/10 flex gap-3">
+                        <input type="text" id="ai-chat-input" class="flex-grow glass-panel rounded-xl px-4 py-3.5 text-sm outline-none text-on-surface focus:border-primary bg-surface-container-high/30" placeholder="Type biochemical query..." onkeydown="handleChatInputKey(event)">
+                        <button onclick="sendChatMessage()" class="bg-gradient-to-r from-primary-container to-secondary text-surface px-6 py-3.5 rounded-xl font-bold flex items-center justify-center gap-1 hover:scale-105 active:scale-95 transition-all">
+                            <span class="material-symbols-outlined">send</span> Send
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full py-12 border-t border-primary/10 glass-nav mt-auto">
+        <div class="flex flex-col md:flex-row justify-between items-center px-margin-mobile md:px-margin-desktop max-w-max-width mx-auto w-full gap-8">
+            <div class="mb-4 md:mb-0">
+                <div class="font-display-lg text-primary uppercase text-2xl tracking-tighter mb-2 font-bold flex items-center gap-1">
+                    <span class="material-symbols-outlined text-2xl text-secondary">biotech</span>
+                    BIO-DIGITAL
+                </div>
+                <p class="font-label-sm text-[10px] text-outline uppercase tracking-widest">© 2026 BIO-DIGITAL LABS. OPTIMIZING HUMAN POTENTIAL.</p>
+            </div>
+            <div class="flex flex-wrap justify-center gap-6 lg:gap-8">
+                <a class="font-label-sm text-[10px] text-on-surface-variant hover:text-secondary transition-colors uppercase font-semibold" href="#">Privacy Protocol</a>
+                <a class="font-label-sm text-[10px] text-on-surface-variant hover:text-secondary transition-colors uppercase font-semibold" href="#">Terms of Service</a>
+                <a class="font-label-sm text-[10px] text-on-surface-variant hover:text-secondary transition-colors uppercase font-semibold" href="#">Research Data</a>
+                <a class="font-label-sm text-[10px] text-on-surface-variant hover:text-secondary transition-colors uppercase font-semibold" href="#">API Access</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Load split Javascript modules in correct dependancy order -->
+    <script src="js/db.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/chat.js"></script>
+    <script src="js/scan.js"></script>
+    <script src="js/compare.js"></script>
+    <script src="js/meal-builder.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
