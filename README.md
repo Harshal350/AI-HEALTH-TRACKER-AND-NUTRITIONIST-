@@ -112,17 +112,8 @@
 
 > Full walkthrough — 3D scroll · biometric dashboard · meal builder · bio-scan · CHLOROPHYLL-v1 AI
 
-<!-- ─────────────────────────────────────────────────────────────────────
-     HOW TO ADD YOUR VIDEO (native GitHub embed — renders as inline player):
-     1. Open any Issue in your repo (you can use an existing or dummy one)
-     2. In the comment box, drag and drop your .mp4 file
-     3. GitHub uploads it and gives you a link like:
-        https://github.com/user-attachments/assets/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-     4. Paste that URL on its own line below (replacing the placeholder)
-     GitHub will render it as a real inline video player in the README.
-──────────────────────────────────────────────────────────────────────── -->
 
-https://github.com/user-attachments/assets/00000000-0000-0000-0000-000000000000
+https://github.com/user-attachments/assets/14b66faf-876e-40d9-b8d0-ca47ea82c11c
 
 > ☝️ **Replace** the URL above with your actual video URL from GitHub's asset uploader.
 > *(Drag your `.mp4` into any Issue comment box → copy the generated link → paste it here on its own line)*
